@@ -1,0 +1,6 @@
+pg_cluster=postgresql-1
+pg_subnet=$(docker network inspect -f '{{range .IPAM.Config}}{{.Subnet}}{{end}}' $pg_cluster | tr -d '\n')
+pg_data=/var/lib/postgres
+pg_user=postgres
+
+docker exec -it -u $pg_user $(docker ps -q -f name=$pg_cluster-ctl) $pg_data/init.sh $pg_subnet

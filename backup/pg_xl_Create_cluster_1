@@ -1,0 +1,32 @@
+pg_image=tiredpixel/postgres-xl
+pg_data=/var/lib/postgres
+pg_user=postgres
+pg_cluster=postgresql-1
+pg_server1=buvrerm18upec1098ywnen85f
+
+
+# node on pg_server_1
+for pg_service in gtm-m-1  data-m-1  data-m-2 data-m-3 data-m-4 data-m-5 # ...
+do
+docker service create \
+    --name $pg_cluster-$pg_service \
+    --network $pg_cluster \
+    --mount type=volume,src=$pg_cluster-$pg_service,dst=$pg_data \
+    --mount type=volume,src=$pg_cluster-ssh,dst=$pg_data/.ssh:ro \
+    --constraint 'node.id=='$pg_server1'' \
+    $pg_image
+done
+
+pg_port=25431 
+for pg_service in coord-m-1 coord-m-2 coord-m-3 coord-m-4 coord-m-5  # ...
+do
+docker service create \
+    --name $pg_cluster-$pg_service \
+    --network $pg_cluster \
+    --publish $pg_port:5432 \
+    --mount type=volume,src=$pg_cluster-$pg_service,dst=$pg_data \
+    --mount type=volume,src=$pg_cluster-ssh,dst=$pg_data/.ssh:ro \
+    --constraint 'node.id=='$pg_server1'' \
+    $pg_image
+pg_port=$(($pg_port+1))
+done

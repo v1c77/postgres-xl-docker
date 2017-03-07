@@ -1,0 +1,14 @@
+pg_image=tiredpixel/postgres-xl
+pg_data=/var/lib/postgres
+pg_user=postgres
+pg_cluster=postgresql-1
+pg_service=ctl-1
+
+docker service create \
+    --name $pg_cluster-$pg_service \
+    --network $pg_cluster \
+    --mount type=volume,src=$pg_cluster-$pg_service,dst=$pg_data \
+    --mount type=volume,src=$pg_cluster-ssh,dst=$pg_data/.ssh \
+    --constraint 'node.id == cczydk502cu8j5d2qt72iwhku' \
+    --constraint node.hostname==$(hostname) \
+    $pg_image

@@ -1,178 +1,109 @@
-# Postgres-XL Docker
+# postgres-xl-docker 自动化部署。
+-------
 
-Postgres-XL Docker is a Docker image source for
-[Postgres-XL](http://www.postgres-xl.org/), the scalable open-source
-PostgreSQL-based database cluster. The images are based on CentOS.
-
-The images allow for arbitrary database cluster topologies, allowing GTM,
-GTM Proxy, Coordinator, and Datanode nodes to be created and added as desired.
-Each service runs in its own container, communicating over a backend network.
-Coordinator nodes also connect to a frontend network.
-
-Previously, Postgres-XL Docker used pgxc_ctl for initialisation and control,
-running SSH servers as well as database services. This has now been completely
-redesigned to run database services directly without SSH, initialising using
-included helper scripts, and allowing full flexibility with regard to cluster
-topologies.
-
-The pgxc_ctl binary continues to be compiled and provided in the image in case
-people find it useful, but this might change in the future, since the up-to-date
-recommended Postgres-XL Docker workflow is to *not* use it.
-
-TYPE        | REPO
-------------|---------------------------------------------------------
-GTM         | <https://hub.docker.com/r/tiredpixel/postgres-xl-gtm/>
-GTM Proxy   | <https://hub.docker.com/r/tiredpixel/postgres-xl-proxy/>
-Coordinator | <https://hub.docker.com/r/tiredpixel/postgres-xl-coord/>
-Datanode    | <https://hub.docker.com/r/tiredpixel/postgres-xl-data/>
+ 
 
 
-## Usage
+```                                                                                                    
+                                                                                                    +-------------------------+
+                                                                                                    |                         |
+                                                                                                    |                         |
+                                                                                                    |         clients         |
+                                                +--------------+                                    |                         |
+                                                |              |                                    |                         |
+                                                |    gtm_1     |                                    +----------+XX+-----------+
+                                                |              |                                              XXX
+                                                +------^-------+                                             XX
+                                                       |                                                    XX
+                                                       |                                                 XXX
+                                                       |                                                XX
+                                +--------------+       |       +--------------+                       XXX
+                                |              |       |       |              |                    XXX
+                                | gtm_proxy_1  <-------+------->  gtm_proxy_2 |                XXXXX
+                                |              |               |              |        XXXXXXXXX
+                                +-----^--------+               +-------^------+      XXX
+                                      |                                |            XX
+                     ^----------------v-----^-------------------------^v----------+XX+-----^
+                     |                      |                         |                    |
+                     |                      |                         |                    |
+              +------v-------+       +------v-------+          +------v-------+      +-----v--------+
+              |              |       |              |          |              |      |              |
+              |   coord_1    |       |   coord_2    |          |   coord_3    |      |    coord_4   |        +    +    +
+              |              |       |              |          |              |      |              |
+              +------+-------+       +------+-------+          +------+-------+      +------+-------+
+                     |                      |                         |                     |
+             +-------+-------+--------------+--+------------------+---+---------------+-----+----------+
+             |               |                 |                  |                   |                |
+        +----v-----+    +----v-----+     +-----v---+          +---v-----+        +----v----+       +---v-----+
+        |          |    |          |     |         |          |         |        |         |       |         |
+        |  data_1  |    |  data_2  |     |  data3  |          |  data4  |        |  data5  |       |  data6  |       +    +    +
+        |          |    |          |     |         |          |         |        |         |       |         |
+        +----------+    +----------+     +---------+          +---------+        +---------+       +---------+
 
-Instructions are for running on Docker using Docker Compose. It should be
-possible to boot an entire Postgres-XL cluster using these instructions. For
-running on Docker Swarm, you'll likely have to make minor tweaks. Please wave if
-something isn't clear or you have questions when doing this.
 
-Note that the `pg_hba.conf` written is wide-open for any user on the backend
-network; if you use this method, be sure that you trust all users on that
-network, and isolate client connections using a frontend network. Alternatively,
-you might like to configure `ident` or `md5`, edit `pg_hba.conf` yourself, or
-not use the provided `init.sh` helper scripts.
-
-These instructions, along with the provided `docker-compose.yml` file, create:
-
-- 1 GTM          (master) (`gtm_1`)
-- 2 GTM Proxies           (`proxy_1`, `proxy_2`)
-- 2 Coordinators (master) (`coord_1`, `coord_2`)
-- 2 Datanodes    (master) (`data_1`,  `data_2`)
-
-```txt
-                                  ------------
-                                  |  gtm_1   |
-                                  ------------
-                                /             \
-                              /                 \
-                            /                     \
-                          /                         \
-              ------------                           ------------
-              | proxy_1  |                           | proxy_2  |
-              ------------                           ------------
-               |          \                         /          |
-               |        ------------        ------------       |
-               |        | coord_1  |        | coord_2  |       |
-               |        ------------        ------------       |
-               |       /             \    /             \      |
-               |     /                 \/                 \    |
-         ------------      ------------/\------------      ------------
-         |  data_1  |     /                          \     |  data_2  |
-         ------------ ----                            ---- ------------
 ```
 
-Other topologies are possible; you likely only need to edit
-`docker-compose.yml`, potentially setting additional environment variables, and adjust the initialisation steps below.
+## Change log
+- ️⌚️ 2017-3-3
+    - 完成 v0.1 脚本，增加必要的步骤控制。并按节点拆分。
+    - 完善 部署文档及测试文档。
 
 
-## Build
+- ️⌚️ 2017-2-28
+    - test new version of postgre-xl docker(0.2.0)
 
-Create a `.env` file from exampled `.env.example`.
+- ️⌚️ 2017-2-22
+    - init 
+    - add `pg_xl_*` files, 无参数构建方式。
 
-Edit `docker-compose.yml` to reflect the desired topology.
+## 说明
+- 脚本默认配置为 1 gtm， 2 proxy, 2coord，10 data, 集群。
+- 默认 起始 coord 端口 25432，依次顺延。
 
-Build services by bringing them up; at the end of the build, services will shut
-down with a failure because of not yet being initialised:
+## 依赖：
 
-```sh
-docker-compose up
+- docker, docker swarm 集群
+
+
+## 部署 （脚本位于`deploy`文件夹）
+> 运行前 可以调整 `run_master.sh` 及 `run_onde.sh` 脚本中的集群节点启动个数。 及 swarm 节点id。
+
+### 1. 初始化集群网络
+```bash
+./run_master.sh net
+```
+### 2. 初始化子节点
+
+在子节点服务器上运行：
+```
+./run_node.sh
 ```
 
-This will create backend (`postgres-a`) and frontend (`postgres-b`) networks.
-Extract the network address of the backend network, and add it to `.env` as
-`PG_NET_CLUSTER_A`, using the helper script:
-
-```sh
-bin/get-PG_NET_CLUSTER_A.sh
+### 3. 注册集群节点。
+返回集master_node, 运行
 ```
-
-
-## Initialisation
-
-Initialise each of the nodes using the supplied helper scripts:
-
-```sh
-for node in gtm_1 proxy_1 proxy_2 coord_1 coord_2 data_1 data_2
-do
-docker-compose run --rm $node ./init.sh
-done
+./run_master.sh
 ```
+如果运行成功，脚本将会返回psql节点更新语句。
 
-As part of the initialisation, `pg_hba.conf` rules are set to allow all traffic
-on the backend network (see warning above, and ensure that it is adequently
-protected or that you use an alternative).
+更新方法为：
 
-Start the services, which should now boot and stay running:
-
-```sh
-docker-compose up
-```
+节点注册成功后使用 ` docker exec -it $(docker ps -q -f name=***) /bin/bash` 命令, 依次进入集群中全部coord及data 节点，更新集群。
 
 
-## Clustering
-
-Prepare a clustering query, able to be executed on each node. Simplest is to use
-the same query for each node, open `psql` for each, and paste it into each. If
-you do this rather than crafting each line separately, expect some lines to
-error.
-
-On coordinators and datanodes:
-
-```sql
-ALTER NODE data_1 WITH (TYPE = 'datanode');
-ALTER NODE data_2 WITH (TYPE = 'datanode');
-CREATE NODE coord_1 WITH (TYPE = 'coordinator', HOST = 'coord_1', PORT = 5432);
-CREATE NODE coord_2 WITH (TYPE = 'coordinator', HOST = 'coord_2', PORT = 5432);
-CREATE NODE data_1  WITH (TYPE = 'datanode',    HOST = 'data_1',  PORT = 5432);
-CREATE NODE data_2  WITH (TYPE = 'datanode',    HOST = 'data_2',  PORT = 5432);
-SELECT pgxc_pool_reload();
-```
-
-The `ALTER` lines fix the datanodes to have the correct types within the
-cluster. The `CREATE` lines specify the cluster topology, but the line for the
-localhost will fail. The `pgxc_pool_reload()` reloads the configuration.
-
-Optionally, set preferred nodes. This could be a good idea if you've constrained
-nodes to run on specific hosts. For example, if you run `coord_1` and `data_1`
-on the same physical host, you might like to run this to ensure cross-network
-traffic is minimised.
-
-On `coord_1`:
-
-```sql
-ALTER NODE data_1 WITH (PRIMARY, PREFERRED);
-SELECT pgxc_pool_reload();
-```
-
-On `coord_2`:
-```sql
-ALTER NODE data_2 WITH (PRIMARY, PREFERRED);
-SELECT pgxc_pool_reload();
-```
-
-View the topologies on each node:
-
-```sql
-SELECT * FROM pgxc_node;
-```
 
 
-## Testing
 
-Test the cluster using the instructions provided in
+
+
+## 功能测试
+
+测试可以直接参考postgres-xl 官方文档教程。
 <http://files.postgres-xl.org/documentation/tutorial-createcluster.html>.
 
-For example, based on those instructions:
+以下是测试样例。
 
-On a coordinator:
+在任意一个coordinator节点运行:
 
 ```sql
 CREATE TABLE disttab (col1 int, col2 int, col3 text) DISTRIBUTE BY HASH(col1);
@@ -186,15 +117,3 @@ SELECT xc_node_id, count(*) FROM disttab GROUP BY xc_node_id;
 SELECT count(*) FROM repltab;
 SELECT xc_node_id, count(*) FROM repltab GROUP BY xc_node_id;
 ```
-
-
-## Blessing
-
-May you find peace, and help others to do likewise.
-
-
-## Licence
-
-Copyright © 2016-2017 [tiredpixel](https://www.tiredpixel.com/).
-It is free software, released under the MIT License, and may be redistributed
-under the terms specified in `LICENSE.txt`.

@@ -1,0 +1,7 @@
+pg_cluster=postgresql-1
+
+docker network create \
+    -d overlay \
+    --internal \
+    --opt encrypted \
+    $pg_cluster
