@@ -94,11 +94,13 @@ node。
 ```
 如果运行成功，脚本将会返回psql节点更新语句。
 
-> ps:不过保险起见 还是 在 swarm manager node 运行一下`docker service ls` 查看是否所有节点均正常启动。
+> p.s.:不过保险起见 还是 在 swarm manager node 运行一下`docker service ls` 查看是否所
+有节点均正常启动。
 
 更新方法为：
 
-节点注册成功后使用 ` docker exec -it $(docker ps -q -f name=***) /bin/bash` 命令, 依次进入集群中全部coord及data 节点，更新集群。
+节点注册成功后使用 ` docker exec -it $(docker ps -q -f name=***) /bin/bash` 命令, 
+依次进入集群中全部coord及data 节点，更新集群。
 
 
 
@@ -128,4 +130,4 @@ SELECT count(*) FROM repltab;
 SELECT xc_node_id, count(*) FROM repltab GROUP BY xc_node_id;
 ```
 
-> p.p.s: 我在做一些苟且之事的时候发现不能一次性添加超过1亿条以上的数据。需要分批添加。
+> p.p.s: 我在做一些苟且之事的时候发现不能一次性使用generate语句添加超过1亿条以上的数据。小心！
