@@ -131,3 +131,6 @@ SELECT xc_node_id, count(*) FROM repltab GROUP BY xc_node_id;
 ```
 
 > p.p.s: 我在做一些苟且之事的时候发现不能一次性使用generate语句添加超过1亿条以上的数据。小心！
+
+Q: LICENSE
+A: MIT
