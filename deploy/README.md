@@ -70,7 +70,9 @@ node。
 ## 部署 （脚本位于`deploy`文件夹）
 
 **务必修改 run_master.sh 脚本内的 pg_server1 及pg_server2 参数**
-在各swarm 节点执行 `docker info| grep "NodeID"` 以获取swarm node id。
+
+在各swarm 节点执行 `docker info| grep "NodeID"` 获取之。
+
 > 运行前 可以调整 `run_master.sh` 及 `run_onde.sh` 脚本中的集群节点启动个数。 
 
 
