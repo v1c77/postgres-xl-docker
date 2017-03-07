@@ -57,8 +57,10 @@
     - add `pg_xl_*` files, 无参数构建方式。
 
 ## 说明
-- 脚本默认配置为 1 gtm， 2 proxy, 2coord，10 data, 集群。
+- 脚本默认配置为 1 gtm， 2 proxy, 2coord，10 data, 集群。只支持2节点 docker swarm 
+node。
 - 默认 起始 coord 端口 25432，依次顺延。
+- 为方便起见， 镜像文件 已经上传到了阿里的公有docker hub上。
 
 ## 依赖：
 
@@ -66,7 +68,11 @@
 
 
 ## 部署 （脚本位于`deploy`文件夹）
-> 运行前 可以调整 `run_master.sh` 及 `run_onde.sh` 脚本中的集群节点启动个数。 及 swarm 节点id。
+
+**务必修改 run_master.sh 脚本内的 pg_server1 及pg_server2 参数**
+
+> 运行前 可以调整 `run_master.sh` 及 `run_onde.sh` 脚本中的集群节点启动个数。 
+
 
 ### 1. 初始化集群网络
 ```bash
@@ -85,6 +91,8 @@
 ./run_master.sh
 ```
 如果运行成功，脚本将会返回psql节点更新语句。
+
+> ps:不过保险起见 还是 在 swarm manager node 运行一下`docker service ls` 查看是否所有节点均正常启动。
 
 更新方法为：
 
@@ -117,3 +125,5 @@ SELECT xc_node_id, count(*) FROM disttab GROUP BY xc_node_id;
 SELECT count(*) FROM repltab;
 SELECT xc_node_id, count(*) FROM repltab GROUP BY xc_node_id;
 ```
+
+> p.p.s: 我在做一些苟且之事的时候发现不能一次性添加超过1亿条以上的数据。需要分批添加。
